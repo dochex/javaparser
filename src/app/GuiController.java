@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
@@ -45,6 +46,7 @@ public class GuiController {
 	public List<String> importsClass = new ArrayList<>();
 	public List<VariableTree> innerVariablesList = new ArrayList<>();
 	private List<MethodTree> innerMethodList = new ArrayList<>();
+	private List<String> listVarName = new ArrayList<>();
 	
 	public GuiController() {
 	}
@@ -142,7 +144,9 @@ public class GuiController {
 			getElementFromString(variable.getType().toString());
 			textArea.appendText(" ", dark);
 			//textArea.appendText(variable.getType().toString() + " ", blue);
-			textArea.appendText(variable.getName().toString(), lowerBlue);
+			String varName = variable.getName().toString();
+			listVarName.add(varName);
+			textArea.appendText(varName, lowerBlue);
 			if (variable.getInitializer() != null) {
 				textArea.appendText(" = ", dark);
 				getElementFromString(variable.getInitializer().toString());
@@ -152,27 +156,53 @@ public class GuiController {
 	}
 
 	private void getElementFromString(String str) {
-		// the regex split on space , . ( < and the + is for them together; ?= keep the delimiter
-		String[] words = str.split("(?=[ |\\.|\\(|,|<]+)"); 
+		// the regex split on space , . ( ) < > and the + is for them together; ?= keep the delimiter
+		String[] words = str.split("(?=[ |\\.|\\(|)|,|<|>]+)");
 		for (String s : words) {
-			int end = s.length();
-			if (isCapitalize(s)) {
-				textArea.appendText(s.substring(0, end), blue);
-			} else if (isKeyword(s)) {
-				textArea.appendText(s, red);
-			} else if (s.length() > 1 && (s.charAt(0) == ' ' || s.charAt(0) == '<' || s.charAt(0) == '(' || s.charAt(0) == ',')
-					&& isCapitalize(s.substring(1))) {
-				textArea.appendText(s.substring(0, 1), grey);
-				textArea.appendText(s.substring(1, end), blue);
-			} else if (s.length() > 1 && (s.charAt(0) == '.' && Character.isLowerCase(s.charAt(1)))) {
-				if (s.contains("\"")) {
+			if (s.length() > 1) {
+				String st = s.trim();
+				int end = s.length();
+				if (isCapitalize(st)) {
+					textArea.appendText(s.substring(0, end), blue);
+				} else if (isKeyword(st)) {
+					if (st.charAt(0) == '(') {
+						textArea.appendText(s.substring(0, 1), grey);
+						textArea.appendText(s.substring(1, end), red);
+					} else {
+						textArea.appendText(s, red);
+					}
+				} else if ((st.charAt(0) == '<' || st.charAt(0) == '(' || st.charAt(0) == ',') && isCapitalize(st.substring(1))) {
+					textArea.appendText(s.substring(0, 1), dark);
+					textArea.appendText(s.substring(1, end), blue);
+				} else if (st.charAt(0) == '.' && Character.isLowerCase(st.charAt(1))) {
+					if (s.contains("\"")) {
+						textArea.appendText(s, grey);
+					} else
+						textArea.appendText(s, green);
+				} else if (isClassField(s)) {
+
+				} else {
 					textArea.appendText(s, grey);
 				}
-				else textArea.appendText(s, green);
 			} else {
 				textArea.appendText(s, grey);
 			}
 		}
+	}
+	
+	
+	private boolean isClassField(String s) {
+		for (String varName : listVarName) {
+			if (s.contains(varName)) {
+				textArea.appendText(s.substring(0, s.indexOf(varName)), grey);
+				textArea.appendText(s.substring(s.indexOf(varName), varName.length()+1), lowerBlue);
+				if (s.length() > varName.length()) {
+					textArea.appendText(s.substring(s.indexOf(varName) + varName.length()), grey);
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean isKeyword(String str) {
@@ -190,7 +220,8 @@ public class GuiController {
 	}
 
 	private static boolean isCapitalize(String str) {
-		if (str.length() > 1 && Character.isUpperCase(str.charAt(0)) && Character.isLowerCase(str.charAt(1))) {
+		if (Character.isUpperCase(str.charAt(0)) && Character.isLowerCase(str.charAt(1))) {
+			//System.out.println(str);
 			return true;
 		} else
 			return false;
@@ -207,33 +238,28 @@ public class GuiController {
 	}
 
 	private void processDeclaration(String packageName, ClassTree classTree) {
-		try {
-			textArea.appendText(classTree.getModifiers().toString(), red);
-			if (!packageName.equals("")) {
-				Class<?> c = Class.forName(packageName + "." + classTree.getSimpleName().toString());
-				if (c.isEnum()) {
-					textArea.appendText("enum ", red);
-				} else if (c.isInterface()) {
-					textArea.appendText("interface ", red);
-				} else {
-					textArea.appendText("class ", red);
-				}
-			} else {
-				textArea.appendText("class ", red);
-			}
-			textArea.appendText(classTree.getSimpleName().toString(), blue);
-			if (classTree.getExtendsClause() != null) {
-				textArea.appendText(" extends ", red);
-				textArea.appendText(classTree.getExtendsClause().toString(), blue);
-			}
-			if (!classTree.getImplementsClause().toString().equals("")) {
-				textArea.appendText(" implements ", red);
-				textArea.appendText(classTree.getImplementsClause().toString(), blue);
-			}
-			textArea.appendText(" { \n\n", dark);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+		textArea.appendText(classTree.getModifiers().toString(), red);
+		switch (classTree.getKind()) {
+		case ENUM -> textArea.appendText("enum ", red);
+		case INTERFACE -> textArea.appendText("interface ", red);
+		case RECORD -> textArea.appendText("record ", red);
+		case ANNOTATION_TYPE -> textArea.appendText("@interface ", red);
+		case CLASS -> textArea.appendText("class ", red);
+		default -> textArea.appendText("unknown ", red);
 		}
+		textArea.appendText(classTree.getSimpleName().toString(), blue);
+		Tree extendsClause = classTree.getExtendsClause();
+		if (extendsClause != null) {
+		    textArea.appendText(" extends ", red);
+		    textArea.appendText(extendsClause.toString(), blue);
+		}
+
+		List<? extends Tree> implementsClause = classTree.getImplementsClause();
+		if (implementsClause != null && !implementsClause.isEmpty()) {
+		    textArea.appendText(" implements ", red);
+		    textArea.appendText(implementsClause.toString(), blue);
+		}
+		textArea.appendText(" { \n\n", dark);
 	}
 	
 
