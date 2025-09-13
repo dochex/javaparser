@@ -176,7 +176,6 @@ public class GuiController {
 					textArea.appendText(s.substring(0, 1), dark);
 					textArea.appendText(s.substring(1, end), blue);
 				} else if (st.charAt(0) == '.' && Character.isLowerCase(st.charAt(1))) {
-					System.out.println(s + " previous: " + previous);
 					if (s.contains("\"")) {
 						textArea.appendText(s, grey);
 					}else if(previous.trim().equals("this")) {
