@@ -30,6 +30,7 @@ public class Parser {
     private ClassTree classTree;
     private String className;
     private String packageName;
+	List<String> methodNameList = new ArrayList<>();
 
 
     public static void main(String[] args) {
@@ -63,6 +64,12 @@ public class Parser {
                 }
                 if (tree.getKind() == Tree.Kind.METHOD) {
                     MethodTree methodTree = (MethodTree) tree;
+                    String methodName = methodTree.getName().toString();
+        			if (methodName.equals("<init>")) {
+        				methodName = className;
+        			}
+        			//System.out.println(methodName);
+        			methodNameList .add(methodName);
                     methodList.add(methodTree);
                 }
             }
