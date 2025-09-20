@@ -32,12 +32,6 @@ public class Parser {
     private String packageName;
 	List<String> methodNameList = new ArrayList<>();
 
-
-    public static void main(String[] args) {
-        new Parser(new File("C:\\Users\\Philippe\\eclipse-workspace\\javaparser\\src\\javaparser\\GuiController2.java"));
-
-    }
-
     public Parser(File file) {
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (final StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null,StandardCharsets.UTF_8)) {
@@ -68,7 +62,6 @@ public class Parser {
         			if (methodName.equals("<init>")) {
         				methodName = className;
         			}
-        			//System.out.println(methodName);
         			methodNameList .add(methodName);
                     methodList.add(methodTree);
                 }
