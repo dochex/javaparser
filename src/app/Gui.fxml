@@ -5,7 +5,7 @@
 <?import javafx.scene.control.Button?>
 <?import jfx.incubator.scene.control.richtext.RichTextArea?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.GuiController">
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.Controller">
 	<top>
 	<FlowPane>
 		<Button fx:id="openJava" text="Open a Java file" onAction="#openJavaFile"/>

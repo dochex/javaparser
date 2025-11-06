@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.tools.DocumentationTool;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -19,6 +20,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
+import com.sun.source.util.Trees;
 
 public class Parser {
 
@@ -31,15 +33,23 @@ public class Parser {
     private String className;
     private String packageName;
 	List<String> methodNameList = new ArrayList<>();
+	Trees trees;
+	CompilationUnitTree compilationUnitTree;
 
-    public Parser(File file) {
+
+	public Parser(File file) {
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        final DocumentationTool docTool = ToolProvider.getSystemDocumentationTool();
         try (final StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null,StandardCharsets.UTF_8)) {
             final Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(file));
             final JavacTask javacTask = (JavacTask) compiler.getTask(null, fileManager, null, null, null, compilationUnits);
-            Iterable<? extends CompilationUnitTree> compilationUnitTrees;
+           Iterable<? extends CompilationUnitTree> compilationUnitTrees;
             compilationUnitTrees = javacTask.parse();
+            javacTask.analyze();
+            
             classTree = (ClassTree) compilationUnitTrees.iterator().next().getTypeDecls().get(0);
+            compilationUnitTree = compilationUnitTrees.iterator().next();
+            trees = Trees.instance(javacTask);
             className = classTree.getSimpleName().toString();
             //System.out.println(classTree.toString());
             importTree = (List<? extends ImportTree>) compilationUnitTrees.iterator().next().getImports();
@@ -99,6 +109,7 @@ public class Parser {
 	public String getClassName() {
 		return className;
 	}
+
 
 
 }
