@@ -1,24 +1,17 @@
 package app;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
-
-import com.sun.source.doctree.DocCommentTree;
-
-import com.sun.source.doctree.DocTree;
 
 import javafx.scene.paint.Color;
 import jfx.incubator.scene.control.richtext.*;
@@ -337,16 +330,6 @@ public class MyTreeVisitor extends TreeScanner<Void, TreePath> {
 		});
 		return null;
 	}
-	
-	/*@Override
-	public Void visitLambdaExpression(LambdaExpressionTree node, TreePath parentPath) {
-		TreePath currentPath = new TreePath(parentPath, node);
-		node.getParameters().forEach(param -> {
-			scan(param, currentPath);
-		});
-		scan(node.getBody(), currentPath);
-		return null;
-	}*/
 
 	@Override
 	public Void visitWhileLoop(WhileLoopTree node, TreePath parentPath) {
@@ -364,10 +347,12 @@ public class MyTreeVisitor extends TreeScanner<Void, TreePath> {
 		long end = sourcePositions.getEndPosition(unit, type);
 		// cas particulier des constantes d'énumération (pas de type)
 		if (trees.getElement(currentPath).getKind() == ElementKind.ENUM_CONSTANT) {
+			System.out.println("Constante d'énumération détectée: " + node.getName());
 			end = start + node.getName().length();
 			richTextArea.setStyle(fromCharIndex(unit, (int) start), fromCharIndex(unit, (int) end), blue);
 		//cas particulier des paramètres des boucles foreach (pas de type)
 		} else if (trees.getElement(currentPath).getKind() == ElementKind.PARAMETER && end == -1) {
+			start = sourcePositions.getStartPosition(unit, node);			
 			end = start + node.getName().length();
 			richTextArea.setStyle(fromCharIndex(unit, (int) start), fromCharIndex(unit, (int) end), violet);
 		} else {
@@ -375,6 +360,7 @@ public class MyTreeVisitor extends TreeScanner<Void, TreePath> {
 			TextPos startPos = fromCharIndex(unit, (int) start);
 			TextPos endPos;
 			end = sourcePositions.getEndPosition(unit, type);
+			// type var
 			if (end == -1) {
 				end = start + "var".length();
 				endPos = fromCharIndex(unit, (int) end);
@@ -394,11 +380,11 @@ public class MyTreeVisitor extends TreeScanner<Void, TreePath> {
 			endPos = fromCharIndex(unit, (int) end);
 			Element element = trees.getElement(currentPath);
 			sortByElementKind(startPos, endPos, element);
-			// scan l'initialiseur de la variable
-			ExpressionTree initializer = node.getInitializer();
-			if (initializer != null) {
-				scan(initializer, currentPath);
-			}
+		}
+		// scan l'initialiseur de la variable
+		ExpressionTree initializer = node.getInitializer();
+		if (initializer != null) {
+			scan(initializer, currentPath);
 		}
 		return null;
 	}
@@ -406,7 +392,7 @@ public class MyTreeVisitor extends TreeScanner<Void, TreePath> {
 	@Override
 	public Void visitReturn(ReturnTree node, TreePath parentPath) {
 		TreePath currentPath = new TreePath(parentPath, node);
-		scan(node.getExpression(), parentPath);
+		scan(node.getExpression(), currentPath);
 		return null;
 	}
 
@@ -446,7 +432,6 @@ public class MyTreeVisitor extends TreeScanner<Void, TreePath> {
 		case STRING_LITERAL:
 		case CHAR_LITERAL:
 			richTextArea.setStyle(startPos, endPos, orange);
-			long line = unit.getLineMap().getLineNumber(start);
 			break;
 		case INT_LITERAL:
 		case DOUBLE_LITERAL:
@@ -510,7 +495,7 @@ public class MyTreeVisitor extends TreeScanner<Void, TreePath> {
 				System.out.println(element.getSimpleName() + " est de type : " + element.getKind());
 			}
 		} else {
-			System.out.println("Identifier non résolu: " + element.getSimpleName());
+			System.out.println("Identifier non résolu: ");
 		}
 	}
 	

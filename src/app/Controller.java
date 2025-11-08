@@ -7,9 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Iterator;
 
-import javax.lang.model.element.Element;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -83,8 +81,8 @@ public class Controller {
 			textArea.appendText(sourceCode, dark);
 			MyTreeVisitor visitor = new MyTreeVisitor(compilationUnit, trees, textArea, sourceCode);
 			try {
-				visitor.colorizeComments();
 				visitor.colorizeKeywords();
+				visitor.colorizeComments();
 				for (Tree typeDecl : compilationUnit.getTypeDecls()) {
 					if (typeDecl instanceof ClassTree) {
 						classTree = (ClassTree) typeDecl;
